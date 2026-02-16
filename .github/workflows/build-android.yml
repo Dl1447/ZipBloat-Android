@@ -140,12 +140,10 @@ jobs:
               # Create build-tools directory structure
               mkdir -p "$ANDROID_HOME/build-tools/33.0.0"
               # Create dummy aidl in the directory
-              cat > "$ANDROID_HOME/build-tools/33.0.0/aidl" << 'EOF'
-#!/bin/sh
-# Dummy aidl script for buildozer
-echo "Dummy aidl called with $@"
-exit 0
-EOF
+              echo "#!/bin/sh" > "$ANDROID_HOME/build-tools/33.0.0/aidl"
+              echo "# Dummy aidl script for buildozer" >> "$ANDROID_HOME/build-tools/33.0.0/aidl"
+              echo "echo \"Dummy aidl called with \$@\"" >> "$ANDROID_HOME/build-tools/33.0.0/aidl"
+              echo "exit 0" >> "$ANDROID_HOME/build-tools/33.0.0/aidl"
               chmod +x "$ANDROID_HOME/build-tools/33.0.0/aidl"
               # Create symlinks
               ln -sf "$ANDROID_HOME/build-tools/33.0.0" "$ANDROID_HOME/build-tools/37.0.0-rc1" 2>/dev/null || true
