@@ -134,7 +134,7 @@ jobs:
           mv ~/.buildozer/android/platform/android-sdk/cmdline-tools/cmdline-tools/* ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
           rm "$SDK_ZIP"
           
-          # 下载 Android NDK（使用较新的可用版本）
+          # 下载 Android NDK（使用与 buildozer.spec 中相同的版本）
           NDK_VERSION="25.1.8937393"
           NDK_URL="https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux.zip"
           NDK_ZIP="android-ndk-r${NDK_VERSION}-linux.zip"
@@ -146,7 +146,7 @@ jobs:
           rm "$NDK_ZIP"
           
           # 重命名 NDK 目录为 buildozer 期望的名称
-          mv ~/.buildozer/android/platform/${NDK_DIR} ~/.buildozer/android/platform/android-ndk-r25
+          mv ~/.buildozer/android/platform/${NDK_DIR} ~/.buildozer/android/platform/android-ndk-r25b
           
           # 设置权限
           chmod -R 755 ~/.buildozer
@@ -186,7 +186,7 @@ jobs:
           # 设置环境变量
           export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          export ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk-r25
+          export ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk-r25b
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
           
           echo "开始构建 ${BUILD_TYPE} 版本 APK..."
