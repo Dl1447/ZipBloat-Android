@@ -99,11 +99,20 @@ jobs:
             ln -s "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/tools/bin"
           fi
           
+          # 从Secrets中获取并创建临时keystore文件
+          echo "Creating temporary keystore file..."
+          echo "${{ secrets.SIGNING_KEY }}" | base64 -d > zipbloat.keystore
+          ls -la zipbloat.keystore
+          
           # 构建APK
           echo "Building APK with buildozer..."
           export KEY_STORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}
           export KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
           buildozer android release
+          
+          # 清理临时keystore文件
+          echo "Cleaning up temporary keystore file..."
+          rm zipbloat.keystore
 
       # 查看生成的APK
       - name: List generated APKs
