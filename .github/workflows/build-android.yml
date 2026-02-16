@@ -62,30 +62,36 @@ jobs:
 
       - name: Create buildozer.spec
         run: |
+          # Create buildozer.spec file
           cat > buildozer.spec << 'EOF'
-          [app]
-          title = ZipBloat
-          package.name = zipbloat
-          package.domain = org.geekline
-          source.dir = .
-          source.include_exts = py,png,jpg,kv,atlas,json,ico
-          version = 1.0.0
-          requirements = kivy>=2.0.0,pyjnius>=1.4.0
-          orientation = portrait
-          fullscreen = 0
-          android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
-          android.api = 33
-          android.ndk = 25b
-          android.archs = arm64-v8a,armeabi-v7a
-          android.minapi = 21
-          android.accepted_sdk_versions = 33
-          android.buildtools = 33.0.0
-          presplash.filename = ZipBloat.png
-          icon.filename = icon.ico
+[app]
+title = ZipBloat
+package.name = zipbloat
+package.domain = org.geekline
+source.dir = .
+source.include_exts = py,png,jpg,kv,atlas,json,ico
+version = 1.0.0
+requirements = kivy>=2.0.0,pyjnius>=1.4.0
+orientation = portrait
+fullscreen = 0
+android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
+android.api = 33
+android.ndk = 25b
+android.archs = arm64-v8a,armeabi-v7a
+android.minapi = 21
+android.accepted_sdk_versions = 33
+android.buildtools = 33.0.0
+presplash.filename = ZipBloat.png
+icon.filename = icon.ico
+
+[buildozer]
+log_level = 2
+EOF
           
-          [buildozer]
-          log_level = 2
-          EOF
+          # Verify the file was created correctly
+          echo "Buildozer.spec created successfully"
+          ls -la buildozer.spec
+          cat buildozer.spec
 
       - name: Setup Android SDK in home directory
         run: |
