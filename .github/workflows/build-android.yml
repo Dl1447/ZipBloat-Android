@@ -63,31 +63,29 @@ jobs:
       - name: Create buildozer.spec
         run: |
           # Create buildozer.spec file
-          cat > buildozer.spec << 'EOF'
-[app]
-title = ZipBloat
-package.name = zipbloat
-package.domain = org.geekline
-source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,json,ico
-version = 1.0.0
-requirements = kivy>=2.0.0,pyjnius>=1.4.0
-orientation = portrait
-fullscreen = 0
-android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
-android.api = 33
-android.ndk = 25b
-android.archs = arm64-v8a,armeabi-v7a
-android.minapi = 21
-android.accepted_sdk_versions = 33
-android.buildtools = 33.0.0
-presplash.filename = ZipBloat.png
-icon.filename = icon.ico
+          echo "[app]" > buildozer.spec
+          echo "title = ZipBloat" >> buildozer.spec
+          echo "package.name = zipbloat" >> buildozer.spec
+          echo "package.domain = org.geekline" >> buildozer.spec
+          echo "source.dir = ." >> buildozer.spec
+          echo "source.include_exts = py,png,jpg,kv,atlas,json,ico" >> buildozer.spec
+          echo "version = 1.0.0" >> buildozer.spec
+          echo "requirements = kivy>=2.0.0,pyjnius>=1.4.0" >> buildozer.spec
+          echo "orientation = portrait" >> buildozer.spec
+          echo "fullscreen = 0" >> buildozer.spec
+          echo "android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE" >> buildozer.spec
+          echo "android.api = 33" >> buildozer.spec
+          echo "android.ndk = 25b" >> buildozer.spec
+          echo "android.archs = arm64-v8a,armeabi-v7a" >> buildozer.spec
+          echo "android.minapi = 21" >> buildozer.spec
+          echo "android.accepted_sdk_versions = 33" >> buildozer.spec
+          echo "android.buildtools = 33.0.0" >> buildozer.spec
+          echo "presplash.filename = ZipBloat.png" >> buildozer.spec
+          echo "icon.filename = icon.ico" >> buildozer.spec
+          echo "" >> buildozer.spec
+          echo "[buildozer]" >> buildozer.spec
+          echo "log_level = 2" >> buildozer.spec
 
-[buildozer]
-log_level = 2
-EOF
-          
           # Verify the file was created correctly
           echo "Buildozer.spec created successfully"
           ls -la buildozer.spec
