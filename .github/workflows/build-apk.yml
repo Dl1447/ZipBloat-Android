@@ -28,9 +28,14 @@ jobs:
 
       # 设置Python环境
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+          cache: 'pip'
+
+      # 设置Android SDK
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
       # 安装依赖
       - name: Install dependencies
@@ -68,58 +73,24 @@ jobs:
         run: |
           mkdir -p ~/.android
           echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
-          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          
+          # 使用GitHub Actions提供的Android SDK
+          export ANDROID_HOME="/usr/local/lib/android/sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
           export ANDROID_ACCEPT_SDK_LICENSES=yes
           
-          # 确保SDK目录存在
-          mkdir -p "$ANDROID_HOME"
+          # 设置PATH
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$PATH"
           
-          # 安装SDK命令行工具
-          SDK_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip"
-          echo "Downloading SDK tools..."
-          curl -L -o sdk-tools.zip "$SDK_TOOLS_URL"
-          
-          # 检查下载是否成功
-          if [ ! -f "sdk-tools.zip" ]; then
-            echo "Failed to download SDK tools"
-            exit 1
-          fi
-          
-          # 解压SDK工具
-          echo "Unzipping SDK tools..."
-          unzip -q sdk-tools.zip
-          
-          # 检查解压是否成功
-          if [ ! -d "cmdline-tools" ]; then
-            echo "Failed to unzip SDK tools"
-            exit 1
-          fi
-          
-          # 移动SDK工具到正确位置
-          echo "Setting up SDK directory structure..."
-          mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
-          mv cmdline-tools/* "$ANDROID_HOME/cmdline-tools/latest/"
-          rm -rf cmdline-tools
-          rm sdk-tools.zip
-          
-          # 设置SDK管理器路径
-          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
-          
-          # 接受许可证并安装build-tools
-          echo "Accepting SDK licenses..."
-          yes | sdkmanager --licenses > /dev/null 2>&1 || echo "License acceptance completed"
-          
-          echo "Installing build-tools and platform components..."
-          yes | sdkmanager "build-tools;33.0.0" "platform-tools" "platforms;android-33" > /dev/null 2>&1 || echo "SDK components installed"
-          
-          # 验证build-tools安装
-          echo "Verifying build-tools installation..."
+          # 验证SDK安装
+          echo "Checking Android SDK installation..."
           ls -la "$ANDROID_HOME/"
+          ls -la "$ANDROID_HOME/cmdline-tools/"
           ls -la "$ANDROID_HOME/build-tools/" || echo "build-tools directory not found"
           
-          # 构建APK
-          echo "Building APK with buildozer..."
+          # 安装必要的SDK组件
+          echo "Installing necessary SDK components..."
+          yes | sdkmanager "build-tools;33.0.0" "platform-tools" "platforms;android-33" "ndk;25.2.9519653" > /dev/null 2>&1 || echo "SDK components installed"
           
           # 创建符号链接让buildozer找到sdkmanager
           if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ] && [ ! -d "$ANDROID_HOME/tools/bin" ]; then
@@ -128,6 +99,8 @@ jobs:
             ln -s "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/tools/bin"
           fi
           
+          # 构建APK
+          echo "Building APK with buildozer..."
           buildozer android debug
 
       # 查看生成的APK
