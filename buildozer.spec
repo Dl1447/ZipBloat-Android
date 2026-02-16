@@ -5,7 +5,8 @@ package.name = zipbloat
 
 package.domain = org.zipbloat
 
-source.files = %(source.dir)s/main.py,ZipBloat_Android.py
+source.dir = .
+source.files = %(source.dir)s/main.py,%(source.dir)s/ZipBloat_Android.py
 
 source.dir_ext = include/
 
@@ -15,9 +16,9 @@ version = 1.0.0
 
 requirements = python3,kivy,pyjnius,android
 
-presplash.filename = %(source.dir)s/presplash.png
+# presplash.filename = %(source.dir)s/presplash.png
 
-icon.filename = %(source.dir)s/icon.png
+# icon.filename = %(source.dir)s/icon.png
 
 orientation = portrait
 
