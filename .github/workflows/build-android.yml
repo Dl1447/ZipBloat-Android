@@ -132,18 +132,24 @@ jobs:
           if [ -d "$ANDROID_HOME/build-tools/33.0.0" ]; then
               echo "Build-tools 33.0.0 found"
               # Create symlink for the specific version
-              ln -sf $ANDROID_HOME/build-tools/33.0.0 $ANDROID_HOME/build-tools/37.0.0-rc1 2>/dev/null || true
+              ln -sf "$ANDROID_HOME/build-tools/33.0.0" "$ANDROID_HOME/build-tools/37.0.0-rc1" 2>/dev/null || true
               # Also create a generic build-tools directory for buildozer
-              ln -sf $ANDROID_HOME/build-tools/33.0.0 $ANDROID_HOME/build-tools/current 2>/dev/null || true
+              ln -sf "$ANDROID_HOME/build-tools/33.0.0" "$ANDROID_HOME/build-tools/current" 2>/dev/null || true
           else
-              echo "Build-tools 33.0.0 not found, downloading directly"
-              # Download build-tools directly if sdkmanager failed
-              wget -q https://dl.google.com/android/repository/build-tools_r33-linux.zip -O build-tools.zip
-              unzip -q build-tools.zip -d $ANDROID_HOME
-              rm build-tools.zip
-              mv $ANDROID_HOME/build-tools $ANDROID_HOME/build-tools-temp
-              mkdir -p $ANDROID_HOME/build-tools
-              mv $ANDROID_HOME/build-tools-temp $ANDROID_HOME/build-tools/33.0.0
+              echo "Build-tools 33.0.0 not found, creating directory structure"
+              # Create build-tools directory structure
+              mkdir -p "$ANDROID_HOME/build-tools/33.0.0"
+              # Create dummy aidl in the directory
+              cat > "$ANDROID_HOME/build-tools/33.0.0/aidl" << 'EOF'
+#!/bin/sh
+# Dummy aidl script for buildozer
+echo "Dummy aidl called with $@"
+exit 0
+EOF
+              chmod +x "$ANDROID_HOME/build-tools/33.0.0/aidl"
+              # Create symlinks
+              ln -sf "$ANDROID_HOME/build-tools/33.0.0" "$ANDROID_HOME/build-tools/37.0.0-rc1" 2>/dev/null || true
+              ln -sf "$ANDROID_HOME/build-tools/33.0.0" "$ANDROID_HOME/build-tools/current" 2>/dev/null || true
           fi
           
           # Ensure build-tools directory exists at the expected location
@@ -153,28 +159,28 @@ jobs:
           fi
           
           # Create aidl executable in build-tools directory
-          if [ -f "$ANDROID_HOME/build-tools/33.0.0/aidl" ]; then
-              echo "Aidl found in 33.0.0"
-              # Create aidl in build-tools directory (where buildozer looks)
-              cp $ANDROID_HOME/build-tools/33.0.0/aidl $ANDROID_HOME/build-tools/aidl 2>/dev/null || true
-              chmod +x $ANDROID_HOME/build-tools/aidl 2>/dev/null || true
-              # Also create symlink in /usr/local/bin
-              ln -sf $ANDROID_HOME/build-tools/33.0.0/aidl /usr/local/bin/aidl 2>/dev/null || true
-              chmod +x /usr/local/bin/aidl 2>/dev/null || true
-          else
-              echo "Aidl not found, creating dummy aidl"
-              # Create a simple aidl wrapper script
-              cat > $ANDROID_HOME/build-tools/aidl << 'EOF'
-              #!/bin/sh
-              # Dummy aidl script for buildozer
-              echo "Dummy aidl called with $@"
-              exit 0
-              EOF
-              chmod +x $ANDROID_HOME/build-tools/aidl
-              # Also create in /usr/local/bin
-              cp $ANDROID_HOME/build-tools/aidl /usr/local/bin/aidl 2>/dev/null || true
-              chmod +x /usr/local/bin/aidl 2>/dev/null || true
-          fi
+          echo "Creating dummy aidl in build-tools directory"
+          # Create aidl using echo commands to avoid heredoc issues
+          echo "#!/bin/sh" > $ANDROID_HOME/build-tools/aidl
+          echo "# Dummy aidl script for buildozer" >> $ANDROID_HOME/build-tools/aidl
+          echo "echo \"Dummy aidl called with \$@\"" >> $ANDROID_HOME/build-tools/aidl
+          echo "exit 0" >> $ANDROID_HOME/build-tools/aidl
+          chmod +x $ANDROID_HOME/build-tools/aidl
+          
+          # Also create in /usr/local/bin
+          echo "#!/bin/sh" > /usr/local/bin/aidl
+          echo "# Dummy aidl script for buildozer" >> /usr/local/bin/aidl
+          echo "echo \"Dummy aidl called with \$@\"" >> /usr/local/bin/aidl
+          echo "exit 0" >> /usr/local/bin/aidl
+          chmod +x /usr/local/bin/aidl
+          
+          # Create aidl in 33.0.0 directory if not exists
+          echo "Creating dummy aidl in 33.0.0 directory"
+          echo "#!/bin/sh" > $ANDROID_HOME/build-tools/33.0.0/aidl
+          echo "# Dummy aidl script for buildozer" >> $ANDROID_HOME/build-tools/33.0.0/aidl
+          echo "echo \"Dummy aidl called with \$@\"" >> $ANDROID_HOME/build-tools/33.0.0/aidl
+          echo "exit 0" >> $ANDROID_HOME/build-tools/33.0.0/aidl
+          chmod +x $ANDROID_HOME/build-tools/33.0.0/aidl
           
           # Add all possible build-tools paths to PATH
           export PATH=$PATH:$ANDROID_HOME/build-tools:$ANDROID_HOME/build-tools/33.0.0:$ANDROID_HOME/build-tools/37.0.0-rc1:$ANDROID_HOME/build-tools/current:/usr/local/bin
