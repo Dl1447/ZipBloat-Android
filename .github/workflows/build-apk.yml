@@ -33,10 +33,6 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
 
-      # 设置Android SDK
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       # 安装依赖
       - name: Install dependencies
         run: |
@@ -63,80 +59,32 @@ jobs:
         with:
           path: |
             ~/.buildozer
-            buildozer.spec
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
+      # 从Secrets中获取并创建临时keystore文件
+      - name: Create temporary keystore
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | base64 -d > zipbloat.keystore
+          ls -la zipbloat.keystore
+
       # 构建APK
       - name: Build APK
         run: |
+          # 设置环境变量
+          export ANDROID_HOME="~/.buildozer/android/platform/android-sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          export ANDROID_NDK_HOME="~/.buildozer/android/platform/android-ndk-r25b"
+          export KEY_STORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}
+          export KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
+          
+          # 创建必要的目录
           mkdir -p ~/.android
           echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
           
-          # 使用GitHub Actions提供的Android SDK
-          export ANDROID_HOME="/usr/local/lib/android/sdk"
-          export ANDROID_SDK_ROOT="$ANDROID_HOME"
-          export ANDROID_ACCEPT_SDK_LICENSES=yes
-          
-          # 设置PATH
-          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$PATH"
-          
-          # 验证SDK安装
-          echo "Checking Android SDK installation..."
-          ls -la "$ANDROID_HOME/"
-          ls -la "$ANDROID_HOME/cmdline-tools/"
-          ls -la "$ANDROID_HOME/build-tools/" || echo "build-tools directory not found"
-          
-          # 安装必要的SDK组件
-          echo "Installing necessary SDK components..."
-          yes | sdkmanager "build-tools;33.0.0" "platform-tools" "platforms;android-33" "ndk;25.2.9519653" > /dev/null 2>&1 || echo "SDK components installed"
-          
-          # 创建符号链接让buildozer找到sdkmanager
-          if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ] && [ ! -d "$ANDROID_HOME/tools/bin" ]; then
-            echo "Creating symlink for sdkmanager..."
-            mkdir -p "$ANDROID_HOME/tools"
-            ln -s "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/tools/bin"
-          fi
-          
-          # 从Secrets中获取并创建临时keystore文件
-          echo "Creating temporary keystore file..."
-          echo "${{ secrets.SIGNING_KEY }}" | base64 -d > zipbloat.keystore
-          ls -la zipbloat.keystore
-          
-          # 预下载NDK以避免构建过程中的网络问题
-          echo "Preparing NDK..."
-          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/25.2.9519653"
-          if [ ! -d "$ANDROID_NDK_HOME" ]; then
-            echo "NDK not found, creating directory..."
-            mkdir -p "$ANDROID_HOME/ndk"
-            
-            # 下载NDK
-            echo "Downloading NDK..."
-            NDK_URL="https://dl.google.com/android/repository/android-ndk-r25b-linux.zip"
-            curl -L -o ndk.zip "$NDK_URL"
-            
-            # 解压NDK
-            echo "Extracting NDK..."
-            unzip -q ndk.zip -d "$ANDROID_HOME/ndk"
-            mv "$ANDROID_HOME/ndk/android-ndk-r25b" "$ANDROID_NDK_HOME"
-            rm ndk.zip
-            
-            echo "NDK prepared successfully"
-          else
-            echo "NDK already exists, skipping download"
-          fi
-          
           # 构建APK
-          echo "Building APK with buildozer..."
-          export KEY_STORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}
-          export KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
-          export ANDROID_NDK_HOME
-          buildozer android release
-          
-          # 清理临时keystore文件
-          echo "Cleaning up temporary keystore file..."
-          rm zipbloat.keystore
+          buildozer android release --verbose
 
       # 查看生成的APK
       - name: List generated APKs
@@ -160,7 +108,6 @@ jobs:
 
       # 发布
       - name: Create Release
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
         uses: ncipollo/release-action@v1
         with:
           artifacts: "${{ env.APK_NAME }}"
@@ -168,3 +115,8 @@ jobs:
           generateReleaseNotes: true
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
+
+      # 清理临时keystore文件
+      - name: Clean up temporary keystore
+        run: |
+          rm zipbloat.keystore
