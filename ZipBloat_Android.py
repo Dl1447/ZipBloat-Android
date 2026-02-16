@@ -166,7 +166,7 @@ class ZipBloatLogic:
             if current_size >= target_size:
                 progress_callback(100)
                 return True
-            
+
             with open(output_path, 'ab') as f:
                 chunk_size = 1024 * 1024
                 junk_data = b'\x00' * chunk_size

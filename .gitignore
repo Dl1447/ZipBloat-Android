@@ -2,6 +2,9 @@
 *.keystore
 *.jks
 
+*_base64.txt
+*.base64
+
 # Build outputs
 bin/
 build/
