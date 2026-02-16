@@ -114,7 +114,58 @@ jobs:
           cat buildozer.spec
 
       ###########################################################################
-      # 步骤4：执行 APK 构建（核心步骤）
+      # 步骤4：手动下载 Android SDK 和 NDK（避免 Buildozer 下载失败）
+      ###########################################################################
+      - name: 手动下载 Android SDK 和 NDK
+        run: |
+          # 创建必要的目录
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          mkdir -p ~/.buildozer/android/platform
+          mkdir -p ~/.android
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
+          
+          # 下载 Android SDK Command Line Tools
+          SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip"
+          SDK_ZIP="commandlinetools-linux-6858069_latest.zip"
+          
+          echo "Downloading Android SDK Command Line Tools..."
+          wget -c --tries=5 --timeout=60 "$SDK_URL" -O "$SDK_ZIP"
+          unzip -q "$SDK_ZIP" -d ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          mv ~/.buildozer/android/platform/android-sdk/cmdline-tools/cmdline-tools/* ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
+          rm "$SDK_ZIP"
+          
+          # 下载 Android NDK（使用较新的可用版本）
+          NDK_VERSION="25.1.8937393"
+          NDK_URL="https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux.zip"
+          NDK_ZIP="android-ndk-r${NDK_VERSION}-linux.zip"
+          NDK_DIR="android-ndk-r${NDK_VERSION}"
+          
+          echo "Downloading Android NDK r${NDK_VERSION}..."
+          wget -c --tries=5 --timeout=60 "$NDK_URL" -O "$NDK_ZIP"
+          unzip -q "$NDK_ZIP" -d ~/.buildozer/android/platform/
+          rm "$NDK_ZIP"
+          
+          # 重命名 NDK 目录为 buildozer 期望的名称
+          mv ~/.buildozer/android/platform/${NDK_DIR} ~/.buildozer/android/platform/android-ndk-r25
+          
+          # 设置权限
+          chmod -R 755 ~/.buildozer
+          
+          # 验证 NDK 安装
+          ls -la ~/.buildozer/android/platform/
+          ls -la ~/.buildozer/android/platform/android-ndk-r25/
+          
+          # 安装必要的 SDK packages
+          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          
+          echo "Installing SDK packages..."
+          yes | sdkmanager "platforms;android-33"
+          yes | sdkmanager "build-tools;33.0.0"
+          yes | sdkmanager "platform-tools"
+
+      ###########################################################################
+      # 步骤5：执行 APK 构建（核心步骤）
       ###########################################################################
       - name: 清理旧构建产物（如果指定清理缓存）
         if: ${{ github.event.inputs.clean_cache == 'true' }}
@@ -132,8 +183,14 @@ jobs:
               BUILD_TYPE="debug"
           fi
           
+          # 设置环境变量
+          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk-r25
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          
           echo "开始构建 ${BUILD_TYPE} 版本 APK..."
-          buildozer android ${BUILD_TYPE}
+          buildozer android ${BUILD_TYPE} --skip-update
           
           # 输出 APK 路径，供后续步骤使用
           APK_PATH=$(find ./bin -name "*.apk" | head -n 1)
@@ -141,7 +198,7 @@ jobs:
           echo "BUILD_TYPE=${BUILD_TYPE}" >> $GITHUB_OUTPUT
 
       ###########################################################################
-      # 步骤5：产物处理 + 上传
+      # 步骤6：产物处理 + 上传
       ###########################################################################
       - name: 验证 APK 文件
         run: |
@@ -161,7 +218,7 @@ jobs:
           retention-days: 30  # 产物保留 30 天
 
       ###########################################################################
-      # 步骤6：（可选）标签推送时自动创建 GitHub Release 并上传 APK
+      # 步骤7：（可选）标签推送时自动创建 GitHub Release 并上传 APK
       ###########################################################################
       - name: 创建 GitHub Release 并上传 APK
         if: ${{ github.ref_type == 'tag' }}
@@ -178,7 +235,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       ###########################################################################
-      # 步骤7：构建失败通知（可选，需配置钉钉/企业微信/邮件等）
+      # 步骤8：构建失败通知（可选，需配置钉钉/企业微信/邮件等）
       ###########################################################################
       - name: 构建失败通知（示例：打印错误日志）
         if: ${{ failure() }}
