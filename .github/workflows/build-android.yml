@@ -86,14 +86,6 @@ jobs:
           log_level = 2
           EOF
 
-      - name: Download Android SDK
-        run: |
-          buildozer android download_sdk
-
-      - name: Build APK (Debug)
-        run: |
-          buildozer -v android debug
-
       - name: Build APK (Release)
         run: |
           buildozer -v android release
