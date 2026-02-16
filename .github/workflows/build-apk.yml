@@ -53,9 +53,10 @@ jobs:
       run: |
         mkdir -p ~/.android
         echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
-        echo "y" > ~/.android/accept-licenses
+        echo "y" | tee ~/.android/accept-licenses
         export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
-        buildozer android debug
+        export ANDROID_SDK_ROOT=$ANDROID_HOME
+        yes | buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
