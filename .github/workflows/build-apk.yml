@@ -101,7 +101,9 @@ jobs:
           
           # 构建APK
           echo "Building APK with buildozer..."
-          buildozer android debug
+          export KEY_STORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}
+          export KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
+          buildozer android release
 
       # 查看生成的APK
       - name: List generated APKs

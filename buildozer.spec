@@ -38,6 +38,13 @@ android.buildtools = 33.0.0
 
 android.accepts_license = True
 
+# Signing configuration
+android.sign = True
+android.keystore = zipbloat.keystore
+android.keystore.user = zipbloat
+android.keystore.password = $KEY_STORE_PASSWORD
+android.keyalias.password = $KEY_PASSWORD
+
 [buildozer]
 
 log_level = 2

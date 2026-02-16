@@ -1,0 +1,28 @@
+# Keystore files
+*.keystore
+*.jks
+
+# Build outputs
+bin/
+build/
+.p4a-*
+.buildozer/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
