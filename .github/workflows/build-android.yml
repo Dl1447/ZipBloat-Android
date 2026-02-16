@@ -97,12 +97,22 @@ jobs:
           unzip -q sdk-tools.zip -d $ANDROID_SDK_ROOT
           rm sdk-tools.zip
           
+          # Create tools directory structure for buildozer compatibility
+          mkdir -p $ANDROID_SDK_ROOT/tools/bin
+          
+          # Symlink cmdline-tools to tools for buildozer compatibility
+          ln -s $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager || true
+          
           # Set up paths
-          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/bin
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/bin:$ANDROID_SDK_ROOT/tools/bin
           
           # Accept licenses
           echo "y" | sdkmanager --licenses > /dev/null 2>&1 || true
           echo "y" | sdkmanager "build-tools;33.0.0" "platform-tools" "platforms;android-33" > /dev/null 2>&1 || true
+          
+          # Make sdkmanager executable
+          chmod +x $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager
+          chmod +x $ANDROID_SDK_ROOT/tools/bin/sdkmanager 2>/dev/null || true
 
       - name: Build APK (Release)
         run: |
