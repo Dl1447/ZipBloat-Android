@@ -89,8 +89,8 @@ jobs:
 
       - name: Setup Android SDK
         run: |
-          # Set up Android SDK paths
-          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
+          # Set up Android SDK paths in project directory
+          export ANDROID_HOME=$(pwd)/.buildozer/android/platform/android-sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           mkdir -p $ANDROID_HOME
           
@@ -104,8 +104,12 @@ jobs:
           mkdir -p $ANDROID_HOME/cmdline-tools
           mv $ANDROID_HOME/latest $ANDROID_HOME/cmdline-tools/
           
+          # Create old tools directory structure for buildozer compatibility
+          mkdir -p $ANDROID_HOME/tools/bin
+          ln -s $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager $ANDROID_HOME/tools/bin/sdkmanager || true
+          
           # Set up environment variables
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools
           
           # Create licenses directory and accept all licenses
           mkdir -p $ANDROID_HOME/licenses
@@ -116,11 +120,6 @@ jobs:
           # Install required components
           sdkmanager --install "build-tools;33.0.0" "platform-tools" "platforms;android-33" > /dev/null 2>&1 || true
           
-          # Create symlink for aidl
-          if [ ! -f $ANDROID_HOME/build-tools/33.0.0/aidl ]; then
-              ln -s $ANDROID_HOME/build-tools/33.0.0/aidl $ANDROID_HOME/aidl 2>/dev/null || true
-          fi
-          
           # Add build-tools to path
           export PATH=$PATH:$ANDROID_HOME/build-tools/33.0.0
           
@@ -129,13 +128,14 @@ jobs:
           echo "PATH: $PATH"
           echo "ANDROID_HOME: $ANDROID_HOME"
           ls -la $ANDROID_HOME/build-tools/ || true
+          ls -la $ANDROID_HOME/tools/bin/ || true
 
       - name: Build APK (Release)
         run: |
           # Set environment variables for buildozer
-          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
+          export ANDROID_HOME=$(pwd)/.buildozer/android/platform/android-sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.0
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.0
           
           # Build APK
           buildozer -v android release
