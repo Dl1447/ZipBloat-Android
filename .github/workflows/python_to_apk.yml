@@ -38,7 +38,7 @@ jobs:
         run: |
           # 创建必要的目录
           mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-          mkdir -p ~/.buildozer/android/platform/android-ndk-r23
+          mkdir -p ~/.buildozer/android/platform
           mkdir -p ~/.android
           echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
           
@@ -52,17 +52,26 @@ jobs:
           mv ~/.buildozer/android/platform/android-sdk/cmdline-tools/cmdline-tools/* ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
           rm "$SDK_ZIP"
           
-          # 下载Android NDK
-          NDK_URL="https://dl.google.com/android/repository/android-ndk-r23-linux.zip"
-          NDK_ZIP="android-ndk-r23-linux.zip"
+          # 下载Android NDK（使用与buildozer期望相同的版本）
+          NDK_VERSION="23.1.7779620"
+          NDK_URL="https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux.zip"
+          NDK_ZIP="android-ndk-r${NDK_VERSION}-linux.zip"
+          NDK_DIR="android-ndk-r${NDK_VERSION}"
           
-          echo "Downloading Android NDK..."
+          echo "Downloading Android NDK r${NDK_VERSION}..."
           wget -c --tries=5 --timeout=60 "$NDK_URL" -O "$NDK_ZIP"
           unzip -q "$NDK_ZIP" -d ~/.buildozer/android/platform/
           rm "$NDK_ZIP"
           
+          # 重命名NDK目录为buildozer期望的名称
+          mv ~/.buildozer/android/platform/${NDK_DIR} ~/.buildozer/android/platform/android-ndk-r23
+          
           # 设置权限
           chmod -R 755 ~/.buildozer
+          
+          # 验证NDK安装
+          ls -la ~/.buildozer/android/platform/
+          ls -la ~/.buildozer/android/platform/android-ndk-r23/
           
           # 安装必要的SDK packages
           export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
