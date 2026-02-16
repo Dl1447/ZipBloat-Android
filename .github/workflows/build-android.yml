@@ -79,6 +79,7 @@ jobs:
           android.archs = arm64-v8a,armeabi-v7a
           android.minapi = 21
           android.accepted_sdk_versions = 33
+          android.buildtools = 33.0.0
           presplash.filename = ZipBloat.png
           icon.filename = icon.ico
           
@@ -86,36 +87,57 @@ jobs:
           log_level = 2
           EOF
 
-      - name: Accept Android SDK licenses
+      - name: Setup Android SDK
         run: |
-          # Set up Android SDK path
-          export ANDROID_SDK_ROOT=~/.buildozer/android/platform/android-sdk
-          mkdir -p $ANDROID_SDK_ROOT
+          # Set up Android SDK paths
+          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          mkdir -p $ANDROID_HOME
           
-          # Download sdkmanager
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O sdk-tools.zip
-          unzip -q sdk-tools.zip -d $ANDROID_SDK_ROOT
-          rm sdk-tools.zip
+          # Download command line tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d $ANDROID_HOME
+          rm cmdline-tools.zip
           
-          # Create tools directory structure for buildozer compatibility
-          mkdir -p $ANDROID_SDK_ROOT/tools/bin
+          # Rename directory for compatibility
+          mv $ANDROID_HOME/cmdline-tools $ANDROID_HOME/latest
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/latest $ANDROID_HOME/cmdline-tools/
           
-          # Symlink cmdline-tools to tools for buildozer compatibility
-          ln -s $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager || true
+          # Set up environment variables
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
           
-          # Set up paths
-          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/bin:$ANDROID_SDK_ROOT/tools/bin
+          # Create licenses directory and accept all licenses
+          mkdir -p $ANDROID_HOME/licenses
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > $ANDROID_HOME/licenses/android-sdk-preview-license
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $ANDROID_HOME/licenses/intel-android-extra-license
           
-          # Accept licenses
-          echo "y" | sdkmanager --licenses > /dev/null 2>&1 || true
-          echo "y" | sdkmanager "build-tools;33.0.0" "platform-tools" "platforms;android-33" > /dev/null 2>&1 || true
+          # Install required components
+          sdkmanager --install "build-tools;33.0.0" "platform-tools" "platforms;android-33" > /dev/null 2>&1 || true
           
-          # Make sdkmanager executable
-          chmod +x $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager
-          chmod +x $ANDROID_SDK_ROOT/tools/bin/sdkmanager 2>/dev/null || true
+          # Create symlink for aidl
+          if [ ! -f $ANDROID_HOME/build-tools/33.0.0/aidl ]; then
+              ln -s $ANDROID_HOME/build-tools/33.0.0/aidl $ANDROID_HOME/aidl 2>/dev/null || true
+          fi
+          
+          # Add build-tools to path
+          export PATH=$PATH:$ANDROID_HOME/build-tools/33.0.0
+          
+          # Verify installation
+          echo "Android SDK setup completed"
+          echo "PATH: $PATH"
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          ls -la $ANDROID_HOME/build-tools/ || true
 
       - name: Build APK (Release)
         run: |
+          # Set environment variables for buildozer
+          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.0
+          
+          # Build APK
           buildozer -v android release
 
       - name: Sign APK
