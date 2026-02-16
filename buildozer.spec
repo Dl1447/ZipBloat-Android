@@ -34,6 +34,8 @@ android.ndk = 25b
 
 android.archs = arm64-v8a,armeabi-v7a
 
+android.buildtools = 33.0.0
+
 android.accepts_license = True
 
 [buildozer]
