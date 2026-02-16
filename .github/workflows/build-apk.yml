@@ -120,6 +120,14 @@ jobs:
           
           # 构建APK
           echo "Building APK with buildozer..."
+          
+          # 创建符号链接让buildozer找到sdkmanager
+          if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ] && [ ! -d "$ANDROID_HOME/tools/bin" ]; then
+            echo "Creating symlink for sdkmanager..."
+            mkdir -p "$ANDROID_HOME/tools"
+            ln -s "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/tools/bin"
+          fi
+          
           buildozer android debug
 
       # 查看生成的APK
