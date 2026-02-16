@@ -26,19 +26,15 @@ jobs:
         pip install buildozer
         pip install cython
         sudo apt-get update
-        # 添加 Ubuntu 22.04 的 universe 仓库，以获取 libtinfo5
         echo "deb http://archive.ubuntu.com/ubuntu/ jammy universe" | sudo tee /etc/apt/sources.list.d/jammy.list
-        # 设置优先级，避免影响其他包
         echo "Package: *" | sudo tee /etc/apt/preferences.d/jammy
         echo "Pin: release n=jammy" | sudo tee -a /etc/apt/preferences.d/jammy
         echo "Pin-Priority: -10" | sudo tee -a /etc/apt/preferences.d/jammy
         echo "Package: libtinfo5" | sudo tee -a /etc/apt/preferences.d/jammy
         echo "Pin: release n=jammy" | sudo tee -a /etc/apt/preferences.d/jammy
         echo "Pin-Priority: 500" | sudo tee -a /etc/apt/preferences.d/jammy
-        # 更新并安装
         sudo apt-get update
         sudo apt-get install -y libtinfo5
-        # 继续安装其他依赖
         sudo apt-get install -y build-essential git python3 python3-dev openjdk-17-jdk
         sudo apt-get install -y automake libtool pkg-config libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
         sudo apt-get install -y python3-setuptools
@@ -55,6 +51,8 @@ jobs:
 
     - name: Build APK
       run: |
+        export ANDROID_ACCEPT_SDK_LICENSES=yes
+        export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
         buildozer android debug
 
     - name: Upload APK
