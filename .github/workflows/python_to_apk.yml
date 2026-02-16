@@ -100,7 +100,11 @@ jobs:
           export ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk-r23
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
           
-          buildozer android debug
+          # 修改 buildozer.spec 文件，指定使用我们下载的 NDK
+          sed -i 's/^android\.ndk =.*/android.ndk = 23.1.7779620/' buildozer.spec
+          
+          # 运行 buildozer，但跳过 SDK/NDK 下载
+          buildozer android debug --skip-update
 
       # 步骤8：上传 APK 作为构建产物（可下载）
       - name: Upload APK artifact
