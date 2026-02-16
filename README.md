@@ -4,11 +4,12 @@
 
 ![ZipBloat](ZipBloat.png)
 
-**一个简单易用的ZIP文件体积放大工具 - Android版**
+**轻量级 Android 专属 ZIP 文件体积扩容工具**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://www.android.com/)
+[![Build Status](https://img.shields.io/badge/Build-GitHub%20Actions-blue.svg)](https://github.com/Dl1447/ZipBloat-Android/actions)
 
 [English](README_EN.md) | 简体中文
 
@@ -18,13 +19,13 @@
 
 ## 项目简介
 
-ZipBloat-Android 是一个功能强大的 ZIP 文件体积放大工具的 Android 版本，可以帮助你快速生成指定大小的 ZIP 文件。支持多种放大方式，包括 ZIP 炸弹模式，适用于测试、学习等多种场景。
+ZipBloat-Android 是一个专为移动场景设计的 ZIP 文件体积扩容工具，可将 ZIP 文件精准扩容至 1GB~100GB。内置 4 种扩容策略，支持触摸优化界面、动态存储权限管理、移动端文件选择器，兼容内部存储与 SD 卡，操作简单直观。
 
 ## 功能特性
 
 ### 核心功能
 
-- 📁 **4种放大方式**：
+- 📁 **4种扩容策略**：
   - 添加空块：在 ZIP 中添加大量空文件
   - 嵌套 ZIP：创建多层嵌套的 ZIP 结构
   - 尾部追加垃圾数据：在 ZIP 文件尾部追加垃圾数据
@@ -50,11 +51,17 @@ ZipBloat-Android 是一个功能强大的 ZIP 文件体积放大工具的 Androi
 
 - 💾 **灵活的存储选项**：支持内部存储和外部存储（SD卡）
 
+### CI/CD
+
+- 🚀 **GitHub Actions 自动构建**：自动编译、签名并发布 APK
+
+- 📦 **自动化发布**：推送到 main 分支时自动创建 Release
+
 ## 快速开始
 
 ### 方法 1：使用预编译 APK（推荐）
 
-1. 从项目发布页面下载最新的 APK 文件
+1. 从项目 [Release 页面](https://github.com/Dl1447/ZipBloat-Android/releases) 下载最新的 APK 文件
 2. 在 Android 设备上安装 APK
 3. 授予存储权限
 4. 打开应用即可使用
@@ -84,7 +91,18 @@ buildozer android release
 # 生成的 APK 位于 bin/ 目录
 ```
 
-### 方法 3：在 Android 设备上直接运行
+### 方法 3：使用 GitHub Actions
+
+本项目已配置 GitHub Actions 自动构建，你可以：
+
+1. Fork 本项目
+2. 在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中配置以下密钥：
+   - `KEYSTORE_BASE64`: Base64 编码的 keystore 文件内容
+   - `KEY_ALIAS`: keystore 中的密钥别名
+3. 推送代码到 main 分支，GitHub Actions 将自动构建并签名 APK
+4. 构建完成后，APK 会自动上传到 Release 页面
+
+### 方法 4：在 Android 设备上直接运行
 
 1. 安装 [Kivy Launcher](https://play.google.com/store/apps/details?id=org.kivy.pygame) 应用
 2. 将项目文件复制到 Android 设备的 `/sdcard/kivy/zipbloat/` 目录
@@ -99,9 +117,9 @@ buildozer android release
 5. **点击开始生成**：等待生成完成
 6. **查看结果**：生成完成后会显示成功消息
 
-## 放大方式说明
+## 扩容策略说明
 
-| 方式 | 说明 | 适用场景 |
+| 策略 | 说明 | 适用场景 |
 |------|------|----------|
 | 添加空块 | 在 ZIP 文件中添加大量空文件 | 常规测试 |
 | 嵌套 ZIP | 创建多层嵌套的 ZIP 结构 | 需要小体积大解压 |
@@ -112,16 +130,21 @@ buildozer android release
 
 ```
 ZipBloat-Android/
-├── ZipBloat_Android.py      # Android 版主程序
-├── main.py                  # Android 版入口文件
-├── buildozer.spec           # Buildozer 配置文件
-├── requirements.txt         # Python 依赖
-├── android/                 # Android 特定模块
-│   ├── storage.py           # 存储访问封装
-│   └── permissions.py       # 权限管理封装
-├── README.md                # 项目说明文档
-├── LICENSE                  # 开源协议
-└── ZipBloat.png             # 应用图标
+├── .github/
+│   └── workflows/
+│       └── build-android.yml    # GitHub Actions 自动构建配置
+├── android/                     # Android 特定模块
+│   ├── permissions.py           # 权限管理封装
+│   └── storage.py               # 存储访问封装
+├── ZipBloat_Android.py          # Android 版主程序
+├── main.py                      # Android 版入口文件
+├── buildozer.spec               # Buildozer 配置文件
+├── requirements.txt             # Python 依赖
+├── README.md                    # 项目说明文档
+├── README_EN.md                 # 英文说明文档
+├── LICENSE                      # 开源协议
+├── ZipBloat.png                 # 应用图标
+└── icon.ico                     # 应用图标文件
 ```
 
 ## 技术栈
@@ -129,6 +152,7 @@ ZipBloat-Android/
 - **GUI 框架**: Kivy 2.0+
 - **打包工具**: Buildozer
 - **Python 版本**: 3.7+
+- **CI/CD**: GitHub Actions
 - **主要特性**: 触摸优化界面，移动端文件选择器
 - **权限管理**: 动态请求存储权限
 - **文件访问**: 使用 Android Storage Access Framework
@@ -167,6 +191,9 @@ A: 请确保已启用"未知来源"应用安装，在设置中允许安装未知
 **Q: 编译 APK 时出错？**
 A: 请确保已安装所有依赖，并检查 buildozer.spec 配置是否正确
 
+**Q: GitHub Actions 构建失败？**
+A: 请检查是否正确配置了 GitHub Secrets（KEYSTORE_BASE64 和 KEY_ALIAS）
+
 ## 开发指南
 
 ### 本地测试
@@ -191,6 +218,22 @@ python ZipBloat_Android.py
 2. 在 `ZipBloatLogic` 类中添加业务逻辑
 3. 更新 `buildozer.spec` 如果需要新的依赖
 4. 重新编译 APK 进行测试
+
+### 配置 GitHub Actions
+
+如需使用 GitHub Actions 自动构建，请：
+
+1. 将 keystore 文件转换为 Base64：
+   ```bash
+   base64 -w 0 your-release.keystore
+   ```
+
+2. 在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中添加：
+   - `KEYSTORE_BASE64`: 上一步输出的 Base64 字符串
+   - `KEY_ALIAS`: keystore 中的密钥别名
+   - `KEY_PASSWORD`: 密钥密码（默认为 dl203904）
+
+3. 推送代码到 main 分支，GitHub Actions 将自动构建并发布 APK
 
 ## 贡献指南
 

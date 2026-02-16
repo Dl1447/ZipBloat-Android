@@ -1,0 +1,146 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libgstreamer1.0-dev \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good
+
+      - name: Install buildozer
+        run: |
+          pip install --upgrade pip
+          pip install buildozer
+          pip install cython
+
+      - name: Cache buildozer dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            buildozer.spec
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
+      - name: Create buildozer.spec
+        run: |
+          cat > buildozer.spec << 'EOF'
+          [app]
+          title = ZipBloat
+          package.name = zipbloat
+          package.domain = org.geekline
+          source.dir = .
+          source.include_exts = py,png,jpg,kv,atlas,json,ico
+          version = 1.0.0
+          requirements = kivy>=2.0.0,pyjnius>=1.4.0
+          orientation = portrait
+          fullscreen = 0
+          android.permissions = WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
+          android.api = 33
+          android.ndk = 25b
+          android.archs = arm64-v8a,armeabi-v7a
+          android.minapi = 21
+          android.accepted_sdk_versions = 33
+          presplash.filename = ZipBloat.png
+          icon.filename = icon.ico
+          
+          [buildozer]
+          log_level = 2
+          EOF
+
+      - name: Download Android SDK
+        run: |
+          buildozer android download_sdk
+
+      - name: Build APK (Debug)
+        run: |
+          buildozer -v android debug
+
+      - name: Build APK (Release)
+        run: |
+          buildozer -v android release
+
+      - name: Sign APK
+        run: |
+          # Get the release APK path
+          APK_PATH=$(find . -name "*.apk" -path "*/bin/*" | grep release | head -n 1)
+          APK_NAME=$(basename "$APK_PATH")
+          SIGNED_APK="ZipBloat-signed.apk"
+          
+          # Create keystore from GitHub secrets
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+          
+          # Sign the APK
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+            -keystore release.keystore \
+            -storepass dl203904 \
+            -keypass dl203904 \
+            "$APK_PATH" \
+            ${{ secrets.KEY_ALIAS }}
+          
+          # Verify the signature
+          jarsigner -verify -verbose -certs "$APK_PATH"
+          
+          # Align the APK
+          zipalign -v 4 "$APK_PATH" "$SIGNED_APK"
+          
+          # Rename the final APK
+          mv "$SIGNED_APK" "ZipBloat-Release.apk"
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZipBloat-APK
+          path: |
+            *.apk
+          retention-days: 30
+
+      - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ZipBloat-Release.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
