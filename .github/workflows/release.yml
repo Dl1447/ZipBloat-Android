@@ -74,7 +74,7 @@ jobs:
           rm "$SDK_ZIP"
           
           # 下载Android NDK（使用较新的可用版本）
-          NDK_VERSION="25.1.8937393"
+          NDK_VERSION="26.1.10909125"
           NDK_URL="https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux.zip"
           NDK_ZIP="android-ndk-r${NDK_VERSION}-linux.zip"
           NDK_DIR="android-ndk-r${NDK_VERSION}"
@@ -85,7 +85,7 @@ jobs:
           rm "$NDK_ZIP"
           
           # 重命名NDK目录为buildozer期望的名称
-          mv ~/.buildozer/android/platform/${NDK_DIR} ~/.buildozer/android/platform/android-ndk-r25b
+          mv ~/.buildozer/android/platform/${NDK_DIR} ~/.buildozer/android/platform/android-ndk-r26
           
           # 设置权限
           chmod -R 755 ~/.buildozer
@@ -105,7 +105,7 @@ jobs:
           # 设置环境变量
           export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          export ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk-r25b
+          export ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk-r26
           export KEY_STORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}
           export KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
