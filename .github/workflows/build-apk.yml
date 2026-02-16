@@ -71,7 +71,29 @@ jobs:
           export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           export ANDROID_ACCEPT_SDK_LICENSES=yes
-          export ANDROID_SDK_MANAGER_UPDATE_ARGS="--licenses"
+          
+          # 确保SDK管理器可用并安装build-tools
+          if [ ! -d "$ANDROID_HOME" ]; then
+            mkdir -p "$ANDROID_HOME"
+          fi
+          
+          # 安装SDK命令行工具
+          SDK_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip"
+          curl -o sdk-tools.zip "$SDK_TOOLS_URL"
+          unzip -q sdk-tools.zip -d "$ANDROID_HOME"
+          rm sdk-tools.zip
+          
+          # 设置SDK管理器路径
+          export PATH="$ANDROID_HOME/cmdline-tools/bin:$PATH"
+          
+          # 接受许可证并安装build-tools
+          echo "y" | sdkmanager --licenses > /dev/null 2>&1 || true
+          echo "y" | sdkmanager "build-tools;33.0.0" "platform-tools" "platforms;android-33" > /dev/null 2>&1 || true
+          
+          # 验证build-tools安装
+          ls -la "$ANDROID_HOME/build-tools/"
+          
+          # 构建APK
           buildozer android debug
 
       # 查看生成的APK
