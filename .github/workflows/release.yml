@@ -1,0 +1,141 @@
+name: Release
+
+# 触发条件: 这里是push以"v"开头的tag触发
+on:
+  push:
+    # 根据branch或者tags来触发
+    branches:
+      - main
+
+    tags:
+      - "v*"
+    # 忽略的标签类型，不触发构建流程(和tags不能同时写)
+    # tags-ignore:
+    #   - "d*"
+
+# 一次持续集成的运行，可以完成多个任务
+jobs:
+  build:
+    # 构建的系统
+    runs-on: ubuntu-latest
+
+    # 构建权限
+    permissions:
+      contents: write
+
+    # 操作步骤
+    steps:
+
+      # 拉取仓库代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 设置Python环境
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      # 安装依赖
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer==1.5.0
+          sudo apt-get update
+          sudo apt-get install -y build-essential git python3 python3-dev openjdk-17-jdk
+          sudo apt-get install -y automake libtool pkg-config libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+          sudo apt-get install -y python3-setuptools
+          sudo apt-get install -y wget curl
+
+      # 从Secrets中获取并创建临时keystore文件
+      - name: Create temporary keystore
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | base64 -d > zipbloat.keystore
+          ls -la zipbloat.keystore
+
+      # 手动下载Android SDK和NDK
+      - name: Manually download Android SDK and NDK
+        run: |
+          # 创建必要的目录
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          mkdir -p ~/.buildozer/android/platform
+          mkdir -p ~/.android
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
+          
+          # 下载Android SDK Command Line Tools
+          SDK_URL="https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip"
+          SDK_ZIP="commandlinetools-linux-6858069_latest.zip"
+          
+          echo "Downloading Android SDK Command Line Tools..."
+          wget -c --tries=5 --timeout=60 "$SDK_URL" -O "$SDK_ZIP"
+          unzip -q "$SDK_ZIP" -d ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          mv ~/.buildozer/android/platform/android-sdk/cmdline-tools/cmdline-tools/* ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
+          rm "$SDK_ZIP"
+          
+          # 下载Android NDK（使用较新的可用版本）
+          NDK_VERSION="25.1.8937393"
+          NDK_URL="https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux.zip"
+          NDK_ZIP="android-ndk-r${NDK_VERSION}-linux.zip"
+          NDK_DIR="android-ndk-r${NDK_VERSION}"
+          
+          echo "Downloading Android NDK r${NDK_VERSION}..."
+          wget -c --tries=5 --timeout=60 "$NDK_URL" -O "$NDK_ZIP"
+          unzip -q "$NDK_ZIP" -d ~/.buildozer/android/platform/
+          rm "$NDK_ZIP"
+          
+          # 重命名NDK目录为buildozer期望的名称
+          mv ~/.buildozer/android/platform/${NDK_DIR} ~/.buildozer/android/platform/android-ndk-r25b
+          
+          # 设置权限
+          chmod -R 755 ~/.buildozer
+          
+          # 安装必要的SDK packages
+          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          
+          echo "Installing SDK packages..."
+          yes | sdkmanager "platforms;android-33"
+          yes | sdkmanager "build-tools;33.0.0"
+          yes | sdkmanager "platform-tools"
+
+      # 构建APK
+      - name: Build APK
+        run: |
+          # 设置环境变量
+          export ANDROID_HOME=~/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export ANDROID_NDK_HOME=~/.buildozer/android/platform/android-ndk-r25b
+          export KEY_STORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}
+          export KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+          
+          # 构建APK
+          buildozer android release --skip-update
+
+      # 查看生成的APK
+      - name: List generated APKs
+        run: ls -la bin/
+
+      # 重命名APK
+      - name: Rename APK
+        run: |
+          APK_FILE=$(ls bin/*.apk)
+          NEW_NAME="ZipBloat-Android-${GITHUB_REF_NAME:-main}.apk"
+          mv "$APK_FILE" "$NEW_NAME"
+          echo "APK_NAME=$NEW_NAME" >> $GITHUB_ENV
+
+      # 发布
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "${{ env.APK_NAME }}"
+          token: ${{ github.token }}
+          generateReleaseNotes: true
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+
+      # 清理临时keystore文件
+      - name: Clean up temporary keystore
+        run: |
+          rm zipbloat.keystore
