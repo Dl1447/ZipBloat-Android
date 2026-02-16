@@ -104,10 +104,34 @@ jobs:
           echo "${{ secrets.SIGNING_KEY }}" | base64 -d > zipbloat.keystore
           ls -la zipbloat.keystore
           
+          # 预下载NDK以避免构建过程中的网络问题
+          echo "Preparing NDK..."
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/25.2.9519653"
+          if [ ! -d "$ANDROID_NDK_HOME" ]; then
+            echo "NDK not found, creating directory..."
+            mkdir -p "$ANDROID_HOME/ndk"
+            
+            # 下载NDK
+            echo "Downloading NDK..."
+            NDK_URL="https://dl.google.com/android/repository/android-ndk-r25b-linux.zip"
+            curl -L -o ndk.zip "$NDK_URL"
+            
+            # 解压NDK
+            echo "Extracting NDK..."
+            unzip -q ndk.zip -d "$ANDROID_HOME/ndk"
+            mv "$ANDROID_HOME/ndk/android-ndk-r25b" "$ANDROID_NDK_HOME"
+            rm ndk.zip
+            
+            echo "NDK prepared successfully"
+          else
+            echo "NDK already exists, skipping download"
+          fi
+          
           # 构建APK
           echo "Building APK with buildozer..."
           export KEY_STORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}
           export KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
+          export ANDROID_NDK_HOME
           buildozer android release
           
           # 清理临时keystore文件
